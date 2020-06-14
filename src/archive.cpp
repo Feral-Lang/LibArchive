@@ -81,7 +81,7 @@ var_base_t * feral_archive_close( vm_state_t & vm, const fn_data_t & fd )
 
 // TODO: feral_archive_write (requires implementation of archive_entry class)
 
-var_base_t * feral_archive_write_file( vm_state_t & vm, const fn_data_t & fd )
+var_base_t * feral_archive_add_file( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
 		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(), "expected a file name to write in archive" );
@@ -160,7 +160,7 @@ INIT_MODULE( archive )
 	vm.add_native_typefn< var_archive_t >( "close",	     feral_archive_close,	 0, src_id, idx );
 	vm.add_native_typefn< var_archive_t >( "add_filter", feral_archive_apply_filter, 1, src_id, idx );
 	vm.add_native_typefn< var_archive_t >( "set_format", feral_archive_apply_format, 1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "write_file", feral_archive_write_file,   1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "add_file",   feral_archive_add_file,     1, src_id, idx );
 	vm.add_native_typefn< var_archive_t >( "extract",    feral_archive_extract,	 0, src_id, idx );
 
 	// register the archive type (register_type)

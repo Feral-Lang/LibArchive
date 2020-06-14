@@ -4,8 +4,8 @@ let writer = ar.new(ar.OPEN_WRITE);
 writer.add_filter(ar.FILTER_ZSTD);
 writer.set_format(ar.FORMAT_TAR_PAX_RESTRICTED);
 writer.open('test.tar.zst');
-writer.write_file('README.md');
-writer.write_file('LICENSE');
+writer.add_file('README.md');
+writer.add_file('LICENSE');
 writer.close();
 
 let reader = ar.new(ar.OPEN_READ);
