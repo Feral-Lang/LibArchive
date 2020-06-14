@@ -1,16 +1,16 @@
 let ar = import('archive/archive');
 
 let writer = ar.new(ar.OPEN_WRITE);
-writer.add_filter(ar.FILTER_GZIP);
+writer.add_filter(ar.FILTER_ZSTD);
 writer.set_format(ar.FORMAT_TAR_PAX_RESTRICTED);
-writer.open('test.tar.gz');
+writer.open('test.tar.zst');
 writer.write_file('README.md');
 writer.write_file('LICENSE');
 writer.close();
 
 let reader = ar.new(ar.OPEN_READ);
-reader.add_filter(ar.FILTER_GZIP);
+reader.add_filter(ar.FILTER_ZSTD);
 reader.set_format(ar.FORMAT_TAR_PAX_RESTRICTED);
-reader.open('test.tar.gz');
+reader.open('test.tar.zst');
 reader.extract();
 reader.close();

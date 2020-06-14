@@ -57,6 +57,7 @@ tests/*.json
 *.rar
 *.tar
 *.zip
+*.zst
 
 # Logs and databases #
 ######################
