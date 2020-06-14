@@ -7,3 +7,10 @@ writer.open('test.tar.gz');
 writer.write_file('README.md');
 writer.write_file('LICENSE');
 writer.close();
+
+let reader = ar.new(ar.OPEN_READ);
+reader.add_filter(ar.FILTER_GZIP);
+reader.set_format(ar.FORMAT_TAR_PAX_RESTRICTED);
+reader.open('test.tar.gz');
+reader.extract();
+reader.close();

@@ -18,7 +18,7 @@
 #include "../include/archive_filters.hpp"
 #include "../include/archive_formats.hpp"
 
-static ssize_t rw_size = 0;
+static int copy_data( struct archive * ar, struct archive * aw );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////// Functions //////////////////////////////////////////////////////////////
@@ -61,7 +61,7 @@ var_base_t * feral_archive_open( vm_state_t & vm, const fn_data_t & fd )
 
 	if( ar->mode() == OM_READ ) {
 		code = archive_read_open_filename( a, name.c_str(), 10240 );
-	}  else if( ar->mode() == OM_WRITE ) {
+	}	else if( ar->mode() == OM_WRITE ) {
 		code = archive_write_open_filename( a, name.c_str() );
 	}
 	if( code != ARCHIVE_OK ) {
@@ -77,22 +77,6 @@ var_base_t * feral_archive_close( vm_state_t & vm, const fn_data_t & fd )
 	if( ar->mode() == OM_READ ) archive_read_close( ar->get() );
 	else if( ar->mode() == OM_WRITE ) archive_write_close( ar->get() );
 	return vm.nil;
-}
-
-var_base_t * feral_archive_read( vm_state_t & vm, const fn_data_t & fd )
-{
-	if( !fd.args[ 1 ]->istype< var_bytebuffer_t >() ) {
-		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(), "expected a bytebuffer to store data in" );
-		return nullptr;
-	}
-	var_archive_t * ar = ARCHIVE( fd.args[ 0 ] );
-	archive * a = ar->get();
-	var_bytebuffer_t * bb = BYTEBUFFER( fd.args[ 1 ] );
-	rw_size = archive_read_data( a, bb->get_buf(), bb->get_size() );
-	if( rw_size < 0 ) {
-		return nullptr;
-	}
-	return make< var_int_t >( rw_size );
 }
 
 // TODO: feral_archive_write (requires implementation of archive_entry class)
@@ -126,18 +110,58 @@ var_base_t * feral_archive_write_file( vm_state_t & vm, const fn_data_t & fd )
 	return vm.tru;
 }
 
+var_base_t * feral_archive_extract( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_archive_t * ar = ARCHIVE( fd.args[ 0 ] );
+	archive * a = ar->get();
+	int extract_flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
+	archive * ext = archive_write_disk_new();
+	archive_entry * entry;
+	archive_write_disk_set_options( ext, extract_flags );
+	archive_write_disk_set_standard_lookup( ext );
+	int code = ARCHIVE_OK;
+	for( ;; ) {
+		code = archive_read_next_header( a, & entry );
+		if( code == ARCHIVE_EOF ) break;
+		if( code < ARCHIVE_OK ) {
+			vm.fail( fd.src_id, fd.idx, "extract - read_next_header failed: %s", archive_error_string( a ) );
+			// goto end done by code < ARCHIVE_WARN
+		}
+		if( code < ARCHIVE_WARN ) goto end;
+		code = archive_write_header( ext, entry );
+		if( code < ARCHIVE_OK ) {
+			vm.fail( fd.src_id, fd.idx, "extract - writer_header failed: %s", archive_error_string( ext ) );
+		} else if( archive_entry_size( entry ) > 0 ) {
+			code = copy_data( a, ext );
+			if( code < ARCHIVE_OK ) {
+				vm.fail( fd.src_id, fd.idx, "extract - copy_data failed: %s", archive_error_string( ext ) );
+			}
+			if( code < ARCHIVE_WARN ) goto end;
+		}
+		code = archive_write_finish_entry( ext );
+		if( code < ARCHIVE_OK ) {
+			vm.fail( fd.src_id, fd.idx, "extract - write_finish_entry failed: %s", archive_error_string( ext ) );
+		}
+		if( code < ARCHIVE_WARN ) goto end;
+	}
+end:
+	archive_write_close( ext );
+	archive_write_free( ext );
+	return make< var_int_t >( code );
+}
+
 INIT_MODULE( archive )
 {
 	var_src_t * src = vm.current_source();
 
 	src->add_native_fn( "new", feral_archive_new, 1 );
 
-	vm.add_native_typefn< var_archive_t >( "open",	      feral_archive_open,	  1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "close",	      feral_archive_close,	  0, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "add_filter",  feral_archive_apply_filter, 1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "set_format",  feral_archive_apply_format, 1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "read_native", feral_archive_read,	  1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "write_file",  feral_archive_write_file,	  1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "open",	     feral_archive_open,	 1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "close",	     feral_archive_close,	 0, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "add_filter", feral_archive_apply_filter, 1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "set_format", feral_archive_apply_format, 1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "write_file", feral_archive_write_file,   1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "extract",    feral_archive_extract,	 0, src_id, idx );
 
 	// register the archive type (register_type)
 	vm.register_type< var_archive_t >( "archive", src_id, idx );
@@ -182,4 +206,20 @@ INIT_MODULE( archive )
 	src->add_native_var( "FORMAT_WARC",	make_all< var_int_t >( ARCHIVE_FORMAT_WARC,	src_id, idx ) );
 
 	return true;
+}
+
+static int copy_data( struct archive * ar, struct archive * aw )
+{
+	int code;
+	const void * buff;
+	size_t size;
+	la_int64_t offset;
+
+	for( ;; ) {
+		code = archive_read_data_block( ar, & buff, & size, & offset );
+		if( code == ARCHIVE_EOF ) return ARCHIVE_OK;
+		if( code < ARCHIVE_OK ) return code;
+		code = archive_write_data_block( aw, buff, size, offset );
+		if( code < ARCHIVE_OK ) return code;
+	}
 }
