@@ -1,0 +1,9 @@
+let ar = import('archive/archive');
+
+let writer = ar.new(ar.OPEN_WRITE);
+writer.add_filter(ar.FILTER_GZIP);
+writer.set_format(ar.FORMAT_TAR_PAX_RESTRICTED);
+writer.open('test.tar.gz');
+writer.write_file('README.md');
+writer.write_file('LICENSE');
+writer.close();

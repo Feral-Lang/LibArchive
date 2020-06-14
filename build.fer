@@ -1,0 +1,24 @@
+let io = import('std/io');
+let fmt = import('std/fmt');
+let cmake = import('std/cmake_gen');
+
+let builder = cmake.new('archive');
+
+# requires the C libarchive library
+let libarchive_dep = builder.add_dep('archive');
+libarchive_dep.make_reqd();
+libarchive_dep.add_path_suffix('archive');
+libarchive_dep.use_brew('libarchive');
+
+# requires feral bytebuffer type
+let bytebuffer_dep = builder.add_dep('bytebuffer_type');
+bytebuffer_dep.make_reqd().make_feral_lib();
+bytebuffer_dep.add_path_suffix('std');
+
+let archive_type = builder.add_shared_lib('archive_type');
+archive_type.add_dep(libarchive_dep);
+
+let archive_lib = builder.add_shared_lib('archive');
+archive_lib.add_dep(libarchive_dep).add_dep(bytebuffer_dep).add_dep(archive_type);
+
+builder.gen();
