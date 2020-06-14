@@ -15,8 +15,8 @@
 
 #include <feral/std/bytebuffer_type.hpp>
 
-#include "../include/archive_filters.hpp"
-#include "../include/archive_formats.hpp"
+#include "archive_filters.hpp"
+#include "archive_formats.hpp"
 
 static int copy_data( struct archive * ar, struct archive * aw );
 
