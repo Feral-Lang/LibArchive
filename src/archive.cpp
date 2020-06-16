@@ -15,6 +15,7 @@
 
 #include <feral/std/bytebuffer_type.hpp>
 
+#include "archive_entry.hpp"
 #include "archive_filters.hpp"
 #include "archive_formats.hpp"
 
@@ -76,10 +77,34 @@ var_base_t * feral_archive_close( vm_state_t & vm, const fn_data_t & fd )
 	var_archive_t * ar = ARCHIVE( fd.args[ 0 ] );
 	if( ar->mode() == OM_READ ) archive_read_close( ar->get() );
 	else if( ar->mode() == OM_WRITE ) archive_write_close( ar->get() );
-	return vm.nil;
+	return fd.args[ 0 ];
 }
 
-// TODO: feral_archive_write (requires implementation of archive_entry class)
+var_base_t * feral_archive_write_header( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_archive_entry_t >() ) {
+		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(),
+			 "expected an archive entry for header, found: '%s'",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	archive_write_header( ARCHIVE( fd.args[ 0 ] )->get(), ARCHIVE_ENTRY( fd.args[ 1 ] )->get() );
+	return fd.args[ 0 ];
+}
+
+var_base_t * feral_archive_write_data( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_bytebuffer_t >() ) {
+		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(),
+			 "expected a bytebuffer for data to store, found: '%s'",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	archive_write_data( ARCHIVE( fd.args[ 0 ] )->get(),
+			    BYTEBUFFER( fd.args[ 1 ] )->get_buf(),
+			    BYTEBUFFER( fd.args[ 1 ] )->get_size() );
+	return fd.args[ 0 ];
+}
 
 var_base_t * feral_archive_add_file( vm_state_t & vm, const fn_data_t & fd )
 {
@@ -107,7 +132,7 @@ var_base_t * feral_archive_add_file( vm_state_t & vm, const fn_data_t & fd )
 	}
 	close( fdesc );
 	archive_entry_free( entry );
-	return vm.tru;
+	return fd.args[ 0 ];
 }
 
 var_base_t * feral_archive_extract( vm_state_t & vm, const fn_data_t & fd )
@@ -154,17 +179,27 @@ INIT_MODULE( archive )
 {
 	var_src_t * src = vm.current_source();
 
-	src->add_native_fn( "new", feral_archive_new, 1 );
+	src->add_native_fn( "new_archive", feral_archive_new, 1 );
+	src->add_native_fn( "new_entry", feral_archive_entry_new, 0 );
 
-	vm.add_native_typefn< var_archive_t >( "open",	     feral_archive_open,	 1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "close",	     feral_archive_close,	 0, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "add_filter", feral_archive_apply_filter, 1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "set_format", feral_archive_apply_format, 1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "add_file",   feral_archive_add_file,     1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "extract",    feral_archive_extract,	 0, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "open",		feral_archive_open,	    1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "close",		feral_archive_close,	    0, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "write_header",	feral_archive_write_header, 1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "write_data",	feral_archive_write_data,   1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "add_filter",	feral_archive_apply_filter, 1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "set_format",	feral_archive_apply_format, 1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "add_file",	feral_archive_add_file,     1, src_id, idx );
+	vm.add_native_typefn< var_archive_t >( "extract",	feral_archive_extract,	    0, src_id, idx );
+
+	vm.add_native_typefn< var_archive_entry_t >( "clear",	     feral_archive_entry_clear,		0, src_id, idx );
+	vm.add_native_typefn< var_archive_entry_t >( "set_pathname", feral_archive_entry_set_pathname,  1, src_id, idx );
+	vm.add_native_typefn< var_archive_entry_t >( "set_size",     feral_archive_entry_set_size,	1, src_id, idx );
+	vm.add_native_typefn< var_archive_entry_t >( "set_filetype", feral_archive_entry_set_filetype,	1, src_id, idx );
+	vm.add_native_typefn< var_archive_entry_t >( "set_perm",     feral_archive_entry_set_perm,	1, src_id, idx );
 
 	// register the archive type (register_type)
 	vm.register_type< var_archive_t >( "archive", src_id, idx );
+	vm.register_type< var_archive_entry_t >( "archive_entry", src_id, idx );
 
 	// enums
 
@@ -204,6 +239,14 @@ INIT_MODULE( archive )
 	src->add_native_var( "FORMAT_XAR",	make_all< var_int_t >( ARCHIVE_FORMAT_XAR,	src_id, idx ) );
 	src->add_native_var( "FORMAT_7ZIP",	make_all< var_int_t >( ARCHIVE_FORMAT_7ZIP,	src_id, idx ) );
 	src->add_native_var( "FORMAT_WARC",	make_all< var_int_t >( ARCHIVE_FORMAT_WARC,	src_id, idx ) );
+
+	src->add_native_var( "E_IFREG",  make_all< var_int_t >( AE_IFREG,  src_id, idx ) );
+	src->add_native_var( "E_IFDIR",  make_all< var_int_t >( AE_IFDIR,  src_id, idx ) );
+	src->add_native_var( "E_IFCHR",  make_all< var_int_t >( AE_IFCHR,  src_id, idx ) );
+	src->add_native_var( "E_IFBLK",  make_all< var_int_t >( AE_IFBLK,  src_id, idx ) );
+	src->add_native_var( "E_IFIFO",  make_all< var_int_t >( AE_IFIFO,  src_id, idx ) );
+	src->add_native_var( "E_IFLNK",  make_all< var_int_t >( AE_IFLNK,  src_id, idx ) );
+	src->add_native_var( "E_IFSOCK", make_all< var_int_t >( AE_IFSOCK, src_id, idx ) );
 
 	return true;
 }

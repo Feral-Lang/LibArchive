@@ -45,4 +45,19 @@ public:
 };
 #define ARCHIVE( x ) static_cast< var_archive_t * >( x )
 
+class var_archive_entry_t : public var_base_t
+{
+	archive_entry * m_val;
+	bool m_owner;
+public:
+	var_archive_entry_t( archive_entry * const val, const size_t & src_id, const size_t & idx, const bool owner = true );
+	~var_archive_entry_t();
+
+	var_base_t * copy( const size_t & src_id, const size_t & idx );
+	void set( var_base_t * from );
+
+	archive_entry * const get();
+};
+#define ARCHIVE_ENTRY( x ) static_cast< var_archive_entry_t * >( x )
+
 #endif // FERAL_LIB_ARCHIVE_TYPE_HPP
