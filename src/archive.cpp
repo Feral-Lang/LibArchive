@@ -102,7 +102,7 @@ var_base_t * feral_archive_write_data( vm_state_t & vm, const fn_data_t & fd )
 	}
 	archive_write_data( ARCHIVE( fd.args[ 0 ] )->get(),
 			    BYTEBUFFER( fd.args[ 1 ] )->get_buf(),
-			    BYTEBUFFER( fd.args[ 1 ] )->get_size() );
+			    BYTEBUFFER( fd.args[ 1 ] )->get_len() );
 	return fd.args[ 0 ];
 }
 
