@@ -1,14 +1,34 @@
 let io = import('std/io');
+let os = import('std/os');
 let fmt = import('std/fmt');
+let sys = import('std/sys');
+let vec = import('std/vec');
 let cmake = import('std/cmake_gen');
 
 let builder = cmake.new('archive');
+
+# get libarchive prefix using homebrew if using macos
+let ext_prefix = '';
+if os.name == 'macos' {
+	let brew = os.find_exec('brew');
+	if brew.empty() {
+		io.cprintln('{y}error{0}: could not find \'brew\' in $PATH{0}');
+		sys.exit(1);
+	}
+	let out = vec.new();
+	let res = os.exec(brew + ' --prefix libarchive 2>/dev/null', out);
+	if res != 0 || out.empty() {
+		io.cprintln('{y}error{0}: brew failed in giving any relevant output');
+		sys.exit(1);
+	}
+	ext_prefix = out[0];
+}
 
 # requires the C libarchive library
 let libarchive_dep = builder.add_dep('archive');
 libarchive_dep.make_reqd();
 libarchive_dep.add_path_suffix('archive');
-libarchive_dep.use_brew('libarchive');
+if !ext_prefix.empty() { libarchive_dep.add_ext_prefix(ext_prefix); }
 
 # requires feral bytebuffer type
 let bytebuffer_dep = builder.add_dep('bytebuffer_type');
