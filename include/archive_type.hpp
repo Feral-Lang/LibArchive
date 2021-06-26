@@ -14,8 +14,8 @@
 #ifndef FERAL_LIB_ARCHIVE_TYPE_HPP
 #define FERAL_LIB_ARCHIVE_TYPE_HPP
 
-#include <archive_entry.h>
 #include <archive.h>
+#include <archive_entry.h>
 #include <feral/VM/VM.hpp>
 
 enum open_mode_t
@@ -24,40 +24,47 @@ enum open_mode_t
 	OM_WRITE,
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////// ARCHIVE class //////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////// Archive class ////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 class var_archive_t : public var_base_t
 {
-	archive * m_val;
+	archive *m_val;
 	open_mode_t m_mode;
 	bool m_owner;
+
 public:
-	var_archive_t( archive * const val, const int & mode, const size_t & src_id, const size_t & idx, const bool owner = true );
+	var_archive_t(archive *const val, const int &mode, const size_t &src_id, const size_t &idx,
+		      const bool owner = true);
 	~var_archive_t();
 
-	var_base_t * copy( const size_t & src_id, const size_t & idx );
-	void set( var_base_t * from );
+	var_base_t *copy(const size_t &src_id, const size_t &idx);
+	void set(var_base_t *from);
 
-	archive * const get();
-	inline const open_mode_t & mode() const { return m_mode; }
+	archive *const get();
+	inline const open_mode_t &mode() const
+	{
+		return m_mode;
+	}
 };
-#define ARCHIVE( x ) static_cast< var_archive_t * >( x )
+#define ARCHIVE(x) static_cast<var_archive_t *>(x)
 
 class var_archive_entry_t : public var_base_t
 {
-	archive_entry * m_val;
+	archive_entry *m_val;
 	bool m_owner;
+
 public:
-	var_archive_entry_t( archive_entry * const val, const size_t & src_id, const size_t & idx, const bool owner = true );
+	var_archive_entry_t(archive_entry *const val, const size_t &src_id, const size_t &idx,
+			    const bool owner = true);
 	~var_archive_entry_t();
 
-	var_base_t * copy( const size_t & src_id, const size_t & idx );
-	void set( var_base_t * from );
+	var_base_t *copy(const size_t &src_id, const size_t &idx);
+	void set(var_base_t *from);
 
-	archive_entry * const get();
+	archive_entry *const get();
 };
-#define ARCHIVE_ENTRY( x ) static_cast< var_archive_entry_t * >( x )
+#define ARCHIVE_ENTRY(x) static_cast<var_archive_entry_t *>(x)
 
 #endif // FERAL_LIB_ARCHIVE_TYPE_HPP

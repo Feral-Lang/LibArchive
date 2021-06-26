@@ -12,257 +12,280 @@
 */
 
 #include <fcntl.h>
-
 #include <feral/std/bytebuffer_type.hpp>
 
 #include "archive_entry.hpp"
 #include "archive_filters.hpp"
 #include "archive_formats.hpp"
 
-static int copy_data( struct archive * ar, struct archive * aw );
+static int copy_data(struct archive *ar, struct archive *aw);
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////// Functions //////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////// Functions ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_base_t * feral_archive_new( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *feral_archive_new(vm_state_t &vm, const fn_data_t &fd)
 {
-	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
-		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(),
-			 "expected an integer as the first argument to define open mode, found: '%s'",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
+	if(!fd.args[1]->istype<var_int_t>()) {
+		vm.fail(
+		fd.args[1]->src_id(), fd.args[1]->idx(),
+		"expected an integer as the first argument to define open mode, found: '%s'",
+		vm.type_name(fd.args[1]).c_str());
 		return nullptr;
 	}
-	archive * a = nullptr;
-	const int mode = mpz_get_si( INT( fd.args[ 1 ] )->get() );
-	if( mode == OM_READ ) {
+	archive *a     = nullptr;
+	const int mode = mpz_get_si(INT(fd.args[1])->get());
+	if(mode == OM_READ) {
 		a = archive_read_new();
-	} else if( mode == OM_WRITE ) {
+	} else if(mode == OM_WRITE) {
 		a = archive_write_new();
 	}
-	if( a == nullptr ) {
-		vm.fail( fd.src_id, fd.idx, "failed to init archive object, possibly invalid mode: %d", mode );
+	if(a == nullptr) {
+		vm.fail(fd.src_id, fd.idx,
+			"failed to init archive object, possibly invalid mode: %d", mode);
 		return nullptr;
 	}
-	return make< var_archive_t >( a, mode );
+	return make<var_archive_t>(a, mode);
 }
 
-var_base_t * feral_archive_open( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *feral_archive_open(vm_state_t &vm, const fn_data_t &fd)
 {
-	var_archive_t * ar = ARCHIVE( fd.args[ 0 ] );
-	archive * a = ar->get();
+	var_archive_t *ar = ARCHIVE(fd.args[0]);
+	archive *a	  = ar->get();
 
-	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
-		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(), "expected a string file name to open as archive" );
+	if(!fd.args[1]->istype<var_str_t>()) {
+		vm.fail(fd.args[1]->src_id(), fd.args[1]->idx(),
+			"expected a string file name to open as archive");
 		return nullptr;
 	}
 
-	const std::string & name = STR( fd.args[ 1 ] )->get();
-	int code = ARCHIVE_OK;
+	const std::string &name = STR(fd.args[1])->get();
+	int code		= ARCHIVE_OK;
 
-	if( ar->mode() == OM_READ ) {
-		code = archive_read_open_filename( a, name.c_str(), 10240 );
-	}	else if( ar->mode() == OM_WRITE ) {
-		code = archive_write_open_filename( a, name.c_str() );
+	if(ar->mode() == OM_READ) {
+		code = archive_read_open_filename(a, name.c_str(), 10240);
+	} else if(ar->mode() == OM_WRITE) {
+		code = archive_write_open_filename(a, name.c_str());
 	}
-	if( code != ARCHIVE_OK ) {
-		vm.fail( fd.src_id, fd.idx, "failed to open archive in given mode" );
+	if(code != ARCHIVE_OK) {
+		vm.fail(fd.src_id, fd.idx, "failed to open archive in given mode");
 		return nullptr;
 	}
-	return fd.args[ 0 ];
+	return fd.args[0];
 }
 
-var_base_t * feral_archive_close( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *feral_archive_close(vm_state_t &vm, const fn_data_t &fd)
 {
-	var_archive_t * ar = ARCHIVE( fd.args[ 0 ] );
-	if( ar->mode() == OM_READ ) archive_read_close( ar->get() );
-	else if( ar->mode() == OM_WRITE ) archive_write_close( ar->get() );
-	return fd.args[ 0 ];
+	var_archive_t *ar = ARCHIVE(fd.args[0]);
+	if(ar->mode() == OM_READ) archive_read_close(ar->get());
+	else if(ar->mode() == OM_WRITE)
+		archive_write_close(ar->get());
+	return fd.args[0];
 }
 
-var_base_t * feral_archive_write_header( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *feral_archive_write_header(vm_state_t &vm, const fn_data_t &fd)
 {
-	if( !fd.args[ 1 ]->istype< var_archive_entry_t >() ) {
-		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(),
-			 "expected an archive entry for header, found: '%s'",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
+	if(!fd.args[1]->istype<var_archive_entry_t>()) {
+		vm.fail(fd.args[1]->src_id(), fd.args[1]->idx(),
+			"expected an archive entry for header, found: '%s'",
+			vm.type_name(fd.args[1]).c_str());
 		return nullptr;
 	}
-	archive_write_header( ARCHIVE( fd.args[ 0 ] )->get(), ARCHIVE_ENTRY( fd.args[ 1 ] )->get() );
-	return fd.args[ 0 ];
+	archive_write_header(ARCHIVE(fd.args[0])->get(), ARCHIVE_ENTRY(fd.args[1])->get());
+	return fd.args[0];
 }
 
-var_base_t * feral_archive_write_data( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *feral_archive_write_data(vm_state_t &vm, const fn_data_t &fd)
 {
-	if( !fd.args[ 1 ]->istype< var_bytebuffer_t >() ) {
-		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(),
-			 "expected a bytebuffer for data to store, found: '%s'",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
+	if(!fd.args[1]->istype<var_bytebuffer_t>()) {
+		vm.fail(fd.args[1]->src_id(), fd.args[1]->idx(),
+			"expected a bytebuffer for data to store, found: '%s'",
+			vm.type_name(fd.args[1]).c_str());
 		return nullptr;
 	}
-	archive_write_data( ARCHIVE( fd.args[ 0 ] )->get(),
-			    BYTEBUFFER( fd.args[ 1 ] )->get_buf(),
-			    BYTEBUFFER( fd.args[ 1 ] )->get_len() );
-	return fd.args[ 0 ];
+	archive_write_data(ARCHIVE(fd.args[0])->get(), BYTEBUFFER(fd.args[1])->get_buf(),
+			   BYTEBUFFER(fd.args[1])->get_len());
+	return fd.args[0];
 }
 
-var_base_t * feral_archive_add_file( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *feral_archive_add_file(vm_state_t &vm, const fn_data_t &fd)
 {
-	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
-		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(), "expected a file name to write in archive" );
+	if(!fd.args[1]->istype<var_str_t>()) {
+		vm.fail(fd.args[1]->src_id(), fd.args[1]->idx(),
+			"expected a file name to write in archive");
 		return nullptr;
 	}
-	var_archive_t * ar = ARCHIVE( fd.args[ 0 ] );
-	archive * a = ar->get();
-	const std::string & filename = STR( fd.args[ 1 ] )->get();
+	var_archive_t *ar	    = ARCHIVE(fd.args[0]);
+	archive *a		    = ar->get();
+	const std::string &filename = STR(fd.args[1])->get();
 
 	struct stat st;
-	stat( filename.c_str(), & st );
-	archive_entry * entry = archive_entry_new();
-	archive_entry_set_pathname( entry, filename.c_str() );
-	archive_entry_set_size( entry, st.st_size );
-	archive_entry_set_filetype( entry, AE_IFREG );
-	archive_entry_set_perm( entry, st.st_mode );
-	archive_write_header( a, entry );
-	int fdesc = open( filename.c_str(), O_RDONLY );
-	char buff[ 8192 ];
+	stat(filename.c_str(), &st);
+	archive_entry *entry = archive_entry_new();
+	archive_entry_set_pathname(entry, filename.c_str());
+	archive_entry_set_size(entry, st.st_size);
+	archive_entry_set_filetype(entry, AE_IFREG);
+	archive_entry_set_perm(entry, st.st_mode);
+	archive_write_header(a, entry);
+	int fdesc = open(filename.c_str(), O_RDONLY);
+	char buff[8192];
 	int len;
-	while( ( len = read( fdesc, buff, sizeof( buff ) ) ) > 0 ) {
-		archive_write_data( a, buff, len );
+	while((len = read(fdesc, buff, sizeof(buff))) > 0) {
+		archive_write_data(a, buff, len);
 	}
-	close( fdesc );
-	archive_entry_free( entry );
-	return fd.args[ 0 ];
+	close(fdesc);
+	archive_entry_free(entry);
+	return fd.args[0];
 }
 
-var_base_t * feral_archive_extract( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *feral_archive_extract(vm_state_t &vm, const fn_data_t &fd)
 {
-	var_archive_t * ar = ARCHIVE( fd.args[ 0 ] );
-	archive * a = ar->get();
-	int extract_flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
-	archive * ext = archive_write_disk_new();
-	archive_entry * entry;
-	archive_write_disk_set_options( ext, extract_flags );
-	archive_write_disk_set_standard_lookup( ext );
+	var_archive_t *ar = ARCHIVE(fd.args[0]);
+	archive *a	  = ar->get();
+	int extract_flags =
+	ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
+	archive *ext = archive_write_disk_new();
+	archive_entry *entry;
+	archive_write_disk_set_options(ext, extract_flags);
+	archive_write_disk_set_standard_lookup(ext);
 	int code = ARCHIVE_OK;
-	for( ;; ) {
-		code = archive_read_next_header( a, & entry );
-		if( code == ARCHIVE_EOF ) break;
-		if( code < ARCHIVE_OK ) {
-			vm.fail( fd.src_id, fd.idx, "extract - read_next_header failed: %s", archive_error_string( a ) );
+	for(;;) {
+		code = archive_read_next_header(a, &entry);
+		if(code == ARCHIVE_EOF) break;
+		if(code < ARCHIVE_OK) {
+			vm.fail(fd.src_id, fd.idx, "extract - read_next_header failed: %s",
+				archive_error_string(a));
 			// goto end done by code < ARCHIVE_WARN
 		}
-		if( code < ARCHIVE_WARN ) goto end;
-		code = archive_write_header( ext, entry );
-		if( code < ARCHIVE_OK ) {
-			vm.fail( fd.src_id, fd.idx, "extract - writer_header failed: %s", archive_error_string( ext ) );
-		} else if( archive_entry_size( entry ) > 0 ) {
-			code = copy_data( a, ext );
-			if( code < ARCHIVE_OK ) {
-				vm.fail( fd.src_id, fd.idx, "extract - copy_data failed: %s", archive_error_string( ext ) );
+		if(code < ARCHIVE_WARN) goto end;
+		code = archive_write_header(ext, entry);
+		if(code < ARCHIVE_OK) {
+			vm.fail(fd.src_id, fd.idx, "extract - writer_header failed: %s",
+				archive_error_string(ext));
+		} else if(archive_entry_size(entry) > 0) {
+			code = copy_data(a, ext);
+			if(code < ARCHIVE_OK) {
+				vm.fail(fd.src_id, fd.idx, "extract - copy_data failed: %s",
+					archive_error_string(ext));
 			}
-			if( code < ARCHIVE_WARN ) goto end;
+			if(code < ARCHIVE_WARN) goto end;
 		}
-		code = archive_write_finish_entry( ext );
-		if( code < ARCHIVE_OK ) {
-			vm.fail( fd.src_id, fd.idx, "extract - write_finish_entry failed: %s", archive_error_string( ext ) );
+		code = archive_write_finish_entry(ext);
+		if(code < ARCHIVE_OK) {
+			vm.fail(fd.src_id, fd.idx, "extract - write_finish_entry failed: %s",
+				archive_error_string(ext));
 		}
-		if( code < ARCHIVE_WARN ) goto end;
+		if(code < ARCHIVE_WARN) goto end;
 	}
 end:
-	archive_write_close( ext );
-	archive_write_free( ext );
-	return make< var_int_t >( code );
+	archive_write_close(ext);
+	archive_write_free(ext);
+	return make<var_int_t>(code);
 }
 
-INIT_MODULE( archive )
+INIT_MODULE(archive)
 {
-	var_src_t * src = vm.current_source();
+	var_src_t *src = vm.current_source();
 
-	src->add_native_fn( "new_archive", feral_archive_new, 1 );
-	src->add_native_fn( "new_entry", feral_archive_entry_new, 0 );
+	src->add_native_fn("new_archive", feral_archive_new, 1);
+	src->add_native_fn("new_entry", feral_archive_entry_new, 0);
 
-	vm.add_native_typefn< var_archive_t >( "open",		feral_archive_open,	    1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "close",		feral_archive_close,	    0, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "write_header",	feral_archive_write_header, 1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "write_data",	feral_archive_write_data,   1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "add_filter",	feral_archive_apply_filter, 1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "set_format",	feral_archive_apply_format, 1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "add_file",	feral_archive_add_file,     1, src_id, idx );
-	vm.add_native_typefn< var_archive_t >( "extract",	feral_archive_extract,	    0, src_id, idx );
+	vm.add_native_typefn<var_archive_t>("open", feral_archive_open, 1, src_id, idx);
+	vm.add_native_typefn<var_archive_t>("close", feral_archive_close, 0, src_id, idx);
+	vm.add_native_typefn<var_archive_t>("write_header", feral_archive_write_header, 1, src_id,
+					    idx);
+	vm.add_native_typefn<var_archive_t>("write_data", feral_archive_write_data, 1, src_id, idx);
+	vm.add_native_typefn<var_archive_t>("add_filter", feral_archive_apply_filter, 1, src_id,
+					    idx);
+	vm.add_native_typefn<var_archive_t>("set_format", feral_archive_apply_format, 1, src_id,
+					    idx);
+	vm.add_native_typefn<var_archive_t>("add_file", feral_archive_add_file, 1, src_id, idx);
+	vm.add_native_typefn<var_archive_t>("extract", feral_archive_extract, 0, src_id, idx);
 
-	vm.add_native_typefn< var_archive_entry_t >( "clear",	     feral_archive_entry_clear,		0, src_id, idx );
-	vm.add_native_typefn< var_archive_entry_t >( "set_pathname", feral_archive_entry_set_pathname,  1, src_id, idx );
-	vm.add_native_typefn< var_archive_entry_t >( "set_size",     feral_archive_entry_set_size,	1, src_id, idx );
-	vm.add_native_typefn< var_archive_entry_t >( "set_filetype", feral_archive_entry_set_filetype,	1, src_id, idx );
-	vm.add_native_typefn< var_archive_entry_t >( "set_perm",     feral_archive_entry_set_perm,	1, src_id, idx );
+	vm.add_native_typefn<var_archive_entry_t>("clear", feral_archive_entry_clear, 0, src_id,
+						  idx);
+	vm.add_native_typefn<var_archive_entry_t>("set_pathname", feral_archive_entry_set_pathname,
+						  1, src_id, idx);
+	vm.add_native_typefn<var_archive_entry_t>("set_size", feral_archive_entry_set_size, 1,
+						  src_id, idx);
+	vm.add_native_typefn<var_archive_entry_t>("set_filetype", feral_archive_entry_set_filetype,
+						  1, src_id, idx);
+	vm.add_native_typefn<var_archive_entry_t>("set_perm", feral_archive_entry_set_perm, 1,
+						  src_id, idx);
 
 	// register the archive type (register_type)
-	vm.register_type< var_archive_t >( "archive", src_id, idx );
-	vm.register_type< var_archive_entry_t >( "archive_entry", src_id, idx );
+	vm.register_type<var_archive_t>("archive", src_id, idx);
+	vm.register_type<var_archive_entry_t>("archive_entry", src_id, idx);
 
 	// enums
 
 	// basic
-	src->add_native_var( "OPEN_READ",  make_all< var_int_t >( OM_READ,  src_id, idx ) );
-	src->add_native_var( "OPEN_WRITE", make_all< var_int_t >( OM_WRITE, src_id, idx ) );
+	src->add_native_var("OPEN_READ", make_all<var_int_t>(OM_READ, src_id, idx));
+	src->add_native_var("OPEN_WRITE", make_all<var_int_t>(OM_WRITE, src_id, idx));
 
 	// filter
-	src->add_native_var( "FILTER_NONE",	make_all< var_int_t >( ARCHIVE_FILTER_NONE,	src_id, idx ) );
-	src->add_native_var( "FILTER_GZIP",	make_all< var_int_t >( ARCHIVE_FILTER_GZIP,	src_id, idx ) );
-	src->add_native_var( "FILTER_BZIP2",	make_all< var_int_t >( ARCHIVE_FILTER_BZIP2,	src_id, idx ) );
-	src->add_native_var( "FILTER_COMPRESS", make_all< var_int_t >( ARCHIVE_FILTER_COMPRESS,	src_id, idx ) );
-	src->add_native_var( "FILTER_PROGRAM",	make_all< var_int_t >( ARCHIVE_FILTER_PROGRAM,	src_id, idx ) );
-	src->add_native_var( "FILTER_LZMA",	make_all< var_int_t >( ARCHIVE_FILTER_LZMA,	src_id, idx ) );
-	src->add_native_var( "FILTER_XZ",	make_all< var_int_t >( ARCHIVE_FILTER_XZ,	src_id, idx ) );
-	src->add_native_var( "FILTER_UU",	make_all< var_int_t >( ARCHIVE_FILTER_UU,	src_id, idx ) );
-	src->add_native_var( "FILTER_RPM",	make_all< var_int_t >( ARCHIVE_FILTER_RPM,	src_id, idx ) );
-	src->add_native_var( "FILTER_LZIP",	make_all< var_int_t >( ARCHIVE_FILTER_LZIP,	src_id, idx ) );
-	src->add_native_var( "FILTER_LRZIP",	make_all< var_int_t >( ARCHIVE_FILTER_LRZIP,	src_id, idx ) );
-	src->add_native_var( "FILTER_LZOP",	make_all< var_int_t >( ARCHIVE_FILTER_LZOP,	src_id, idx ) );
-	src->add_native_var( "FILTER_GRZIP",	make_all< var_int_t >( ARCHIVE_FILTER_GRZIP,	src_id, idx ) );
-	src->add_native_var( "FILTER_LZ4",	make_all< var_int_t >( ARCHIVE_FILTER_LZ4,	src_id, idx ) );
-	src->add_native_var( "FILTER_ZSTD",	make_all< var_int_t >( ARCHIVE_FILTER_ZSTD,	src_id, idx ) );
+	src->add_native_var("FILTER_NONE", make_all<var_int_t>(ARCHIVE_FILTER_NONE, src_id, idx));
+	src->add_native_var("FILTER_GZIP", make_all<var_int_t>(ARCHIVE_FILTER_GZIP, src_id, idx));
+	src->add_native_var("FILTER_BZIP2", make_all<var_int_t>(ARCHIVE_FILTER_BZIP2, src_id, idx));
+	src->add_native_var("FILTER_COMPRESS",
+			    make_all<var_int_t>(ARCHIVE_FILTER_COMPRESS, src_id, idx));
+	src->add_native_var("FILTER_PROGRAM",
+			    make_all<var_int_t>(ARCHIVE_FILTER_PROGRAM, src_id, idx));
+	src->add_native_var("FILTER_LZMA", make_all<var_int_t>(ARCHIVE_FILTER_LZMA, src_id, idx));
+	src->add_native_var("FILTER_XZ", make_all<var_int_t>(ARCHIVE_FILTER_XZ, src_id, idx));
+	src->add_native_var("FILTER_UU", make_all<var_int_t>(ARCHIVE_FILTER_UU, src_id, idx));
+	src->add_native_var("FILTER_RPM", make_all<var_int_t>(ARCHIVE_FILTER_RPM, src_id, idx));
+	src->add_native_var("FILTER_LZIP", make_all<var_int_t>(ARCHIVE_FILTER_LZIP, src_id, idx));
+	src->add_native_var("FILTER_LRZIP", make_all<var_int_t>(ARCHIVE_FILTER_LRZIP, src_id, idx));
+	src->add_native_var("FILTER_LZOP", make_all<var_int_t>(ARCHIVE_FILTER_LZOP, src_id, idx));
+	src->add_native_var("FILTER_GRZIP", make_all<var_int_t>(ARCHIVE_FILTER_GRZIP, src_id, idx));
+	src->add_native_var("FILTER_LZ4", make_all<var_int_t>(ARCHIVE_FILTER_LZ4, src_id, idx));
+	src->add_native_var("FILTER_ZSTD", make_all<var_int_t>(ARCHIVE_FILTER_ZSTD, src_id, idx));
 
 	// formats
-	src->add_native_var( "FORMAT_CPIO",	make_all< var_int_t >( ARCHIVE_FORMAT_CPIO,	src_id, idx ) );
-	src->add_native_var( "FORMAT_TAR",	make_all< var_int_t >( ARCHIVE_FORMAT_TAR,	src_id, idx ) );
-	src->add_native_var( "FORMAT_TAR_USTAR", make_all< var_int_t >( ARCHIVE_FORMAT_TAR_USTAR, src_id, idx ) );
-	src->add_native_var( "FORMAT_TAR_PAX_INTERCHANGE", make_all< var_int_t >( ARCHIVE_FORMAT_TAR_PAX_INTERCHANGE, src_id, idx ) );
-	src->add_native_var( "FORMAT_TAR_PAX_RESTRICTED", make_all< var_int_t >( ARCHIVE_FORMAT_TAR_PAX_RESTRICTED, src_id, idx ) );
-	src->add_native_var( "FORMAT_TAR_GNUTAR", make_all< var_int_t >( ARCHIVE_FORMAT_TAR_GNUTAR, src_id, idx ) );
-	src->add_native_var( "FORMAT_ZIP",	make_all< var_int_t >( ARCHIVE_FORMAT_ZIP,	src_id, idx ) );
-	src->add_native_var( "FORMAT_AR",	make_all< var_int_t >( ARCHIVE_FORMAT_AR,	src_id, idx ) );
-	src->add_native_var( "FORMAT_AR_BSD",	make_all< var_int_t >( ARCHIVE_FORMAT_AR_BSD,	src_id, idx ) );
-	src->add_native_var( "FORMAT_MTREE",	make_all< var_int_t >( ARCHIVE_FORMAT_MTREE,	src_id, idx ) );
-	src->add_native_var( "FORMAT_RAW",	make_all< var_int_t >( ARCHIVE_FORMAT_RAW,	src_id, idx ) );
-	src->add_native_var( "FORMAT_XAR",	make_all< var_int_t >( ARCHIVE_FORMAT_XAR,	src_id, idx ) );
-	src->add_native_var( "FORMAT_7ZIP",	make_all< var_int_t >( ARCHIVE_FORMAT_7ZIP,	src_id, idx ) );
-	src->add_native_var( "FORMAT_WARC",	make_all< var_int_t >( ARCHIVE_FORMAT_WARC,	src_id, idx ) );
+	src->add_native_var("FORMAT_CPIO", make_all<var_int_t>(ARCHIVE_FORMAT_CPIO, src_id, idx));
+	src->add_native_var("FORMAT_TAR", make_all<var_int_t>(ARCHIVE_FORMAT_TAR, src_id, idx));
+	src->add_native_var("FORMAT_TAR_USTAR",
+			    make_all<var_int_t>(ARCHIVE_FORMAT_TAR_USTAR, src_id, idx));
+	src->add_native_var("FORMAT_TAR_PAX_INTERCHANGE",
+			    make_all<var_int_t>(ARCHIVE_FORMAT_TAR_PAX_INTERCHANGE, src_id, idx));
+	src->add_native_var("FORMAT_TAR_PAX_RESTRICTED",
+			    make_all<var_int_t>(ARCHIVE_FORMAT_TAR_PAX_RESTRICTED, src_id, idx));
+	src->add_native_var("FORMAT_TAR_GNUTAR",
+			    make_all<var_int_t>(ARCHIVE_FORMAT_TAR_GNUTAR, src_id, idx));
+	src->add_native_var("FORMAT_ZIP", make_all<var_int_t>(ARCHIVE_FORMAT_ZIP, src_id, idx));
+	src->add_native_var("FORMAT_AR", make_all<var_int_t>(ARCHIVE_FORMAT_AR, src_id, idx));
+	src->add_native_var("FORMAT_AR_BSD",
+			    make_all<var_int_t>(ARCHIVE_FORMAT_AR_BSD, src_id, idx));
+	src->add_native_var("FORMAT_MTREE", make_all<var_int_t>(ARCHIVE_FORMAT_MTREE, src_id, idx));
+	src->add_native_var("FORMAT_RAW", make_all<var_int_t>(ARCHIVE_FORMAT_RAW, src_id, idx));
+	src->add_native_var("FORMAT_XAR", make_all<var_int_t>(ARCHIVE_FORMAT_XAR, src_id, idx));
+	src->add_native_var("FORMAT_7ZIP", make_all<var_int_t>(ARCHIVE_FORMAT_7ZIP, src_id, idx));
+	src->add_native_var("FORMAT_WARC", make_all<var_int_t>(ARCHIVE_FORMAT_WARC, src_id, idx));
 
-	src->add_native_var( "E_IFREG",  make_all< var_int_t >( AE_IFREG,  src_id, idx ) );
-	src->add_native_var( "E_IFDIR",  make_all< var_int_t >( AE_IFDIR,  src_id, idx ) );
-	src->add_native_var( "E_IFCHR",  make_all< var_int_t >( AE_IFCHR,  src_id, idx ) );
-	src->add_native_var( "E_IFBLK",  make_all< var_int_t >( AE_IFBLK,  src_id, idx ) );
-	src->add_native_var( "E_IFIFO",  make_all< var_int_t >( AE_IFIFO,  src_id, idx ) );
-	src->add_native_var( "E_IFLNK",  make_all< var_int_t >( AE_IFLNK,  src_id, idx ) );
-	src->add_native_var( "E_IFSOCK", make_all< var_int_t >( AE_IFSOCK, src_id, idx ) );
+	src->add_native_var("E_IFREG", make_all<var_int_t>(AE_IFREG, src_id, idx));
+	src->add_native_var("E_IFDIR", make_all<var_int_t>(AE_IFDIR, src_id, idx));
+	src->add_native_var("E_IFCHR", make_all<var_int_t>(AE_IFCHR, src_id, idx));
+	src->add_native_var("E_IFBLK", make_all<var_int_t>(AE_IFBLK, src_id, idx));
+	src->add_native_var("E_IFIFO", make_all<var_int_t>(AE_IFIFO, src_id, idx));
+	src->add_native_var("E_IFLNK", make_all<var_int_t>(AE_IFLNK, src_id, idx));
+	src->add_native_var("E_IFSOCK", make_all<var_int_t>(AE_IFSOCK, src_id, idx));
 
 	return true;
 }
 
-static int copy_data( struct archive * ar, struct archive * aw )
+static int copy_data(struct archive *ar, struct archive *aw)
 {
 	int code;
-	const void * buff;
+	const void *buff;
 	size_t size;
 	la_int64_t offset;
 
-	for( ;; ) {
-		code = archive_read_data_block( ar, & buff, & size, & offset );
-		if( code == ARCHIVE_EOF ) return ARCHIVE_OK;
-		if( code < ARCHIVE_OK ) return code;
-		code = archive_write_data_block( aw, buff, size, offset );
-		if( code < ARCHIVE_OK ) return code;
+	for(;;) {
+		code = archive_read_data_block(ar, &buff, &size, &offset);
+		if(code == ARCHIVE_EOF) return ARCHIVE_OK;
+		if(code < ARCHIVE_OK) return code;
+		code = archive_write_data_block(aw, buff, size, offset);
+		if(code < ARCHIVE_OK) return code;
 	}
 }
