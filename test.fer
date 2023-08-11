@@ -1,21 +1,21 @@
+let fs = import('std/fs');
+let vec = import('std/vec');
+let stat = import('std/stat');
 let ar = import('archive/archive');
 let bytebuffer = import('std/bytebuffer');
-let fs = import('std/fs');
-let os = import('std/os');
-let vec = import('std/vec');
 
 # libarchive zstd format doesn't seem to be working correctly on Android (10)
-let zstwriter = ar.new_archive(ar.OPEN_WRITE);
-zstwriter.add_filter(ar.FILTER_ZSTD);
-zstwriter.set_format(ar.FORMAT_TAR_PAX_RESTRICTED);
+let zstwriter = ar.newArchive(ar.OPEN_WRITE);
+zstwriter.addFilter(ar.FILTER_ZSTD);
+zstwriter.setFormat(ar.FORMAT_TAR_PAX_RESTRICTED);
 zstwriter.open('test.tar.zst');
-zstwriter.add_file('README.md');
-zstwriter.add_file('LICENSE');
+zstwriter.addFile('README.md');
+zstwriter.addFile('LICENSE');
 zstwriter.close();
 
-let zstreader = ar.new_archive(ar.OPEN_READ);
-zstreader.add_filter(ar.FILTER_ZSTD);
-zstreader.set_format(ar.FORMAT_TAR_PAX_RESTRICTED);
+let zstreader = ar.newArchive(ar.OPEN_READ);
+zstreader.addFilter(ar.FILTER_ZSTD);
+zstreader.setFormat(ar.FORMAT_TAR_PAX_RESTRICTED);
 zstreader.open('test.tar.zst');
 zstreader.extract();
 zstreader.close();
@@ -23,24 +23,24 @@ zstreader.close();
 # equivalent to https://github.com/libarchive/libarchive/wiki/Examples#a-basic-write-example
 let files = vec.new('README.md', 'LICENSE');
 let bb = bytebuffer.new(8192);
-let gzwriter = ar.new_archive(ar.OPEN_WRITE);
-gzwriter.add_filter(ar.FILTER_GZIP);
-gzwriter.set_format(ar.FORMAT_TAR_PAX_RESTRICTED);
+let gzwriter = ar.newArchive(ar.OPEN_WRITE);
+gzwriter.addFilter(ar.FILTER_GZIP);
+gzwriter.setFormat(ar.FORMAT_TAR_PAX_RESTRICTED);
 gzwriter.open('test.tar.gz');
-let entry = ar.new_entry();
+let entry = ar.newEntry();
 for file in files.each() {
-	let stat = os.stat(file);
-	entry.set_pathname(file);
-	entry.set_size(stat.size);
-	entry.set_filetype(stat.get_ae_filetype());
-	entry.set_perm(stat.mode);
-	gzwriter.write_header(entry);
-	let fd = fs.open(file);
+	let stat = stat.stat(file);
+	entry.setPathname(file);
+	entry.setSize(stat.size);
+	entry.setFiletype(stat.getArchiveEntryFiletype());
+	entry.setPerm(stat.mode);
+	gzwriter.writeHeader(entry);
+	let fd = fs.fdOpen(file);
 	let len = 0;
-	while (len = fs.read(fd, bb)) > 0 {
-		gzwriter.write_data(bb);
+	while (len = fs.fdRead(fd, bb)) > 0 {
+		gzwriter.writeData(bb);
 	}
-	fs.close(fd);
+	fs.fdClose(fd);
 	entry.clear();
 }
 gzwriter.close();

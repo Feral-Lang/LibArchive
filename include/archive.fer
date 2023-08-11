@@ -1,13 +1,14 @@
-mload('archive/archive');
+mload('archive/Archive');
+
 let stat = import('std/stat');
 
-let get_ae_filetype in stat.stat_t = fn() {
-	if self.isreg()  { return E_IFREG;  }
-	if self.isdir()  { return E_IFDIR;  }
-	if self.ischr()  { return E_IFCHR;  }
-	if self.isblk()  { return E_IFBLK;  }
-	if self.isfifo() { return E_IFIFO;  }
-	if self.islnk()  { return E_IFLNK;  }
-	if self.issock() { return E_IFSOCK; }
+let getArchiveEntryFiletype in stat.Stat = fn() {
+	if self.isReg()  { return E_IFREG;  }
+	if self.isDir()  { return E_IFDIR;  }
+	if self.isChr()  { return E_IFCHR;  }
+	if self.isBlk()  { return E_IFBLK;  }
+	if self.isFifo() { return E_IFIFO;  }
+	if self.isLnk()  { return E_IFLNK;  }
+	if self.isSock() { return E_IFSOCK; }
 	return E_IFREG; # default
 };
