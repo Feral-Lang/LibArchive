@@ -12,7 +12,7 @@ static int copyData(struct archive *ar, struct archive *aw);
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *feralArchiveNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		     const Map<String, AssnArgData> &assn_args)
+		     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(args[1]->getLoc(),
@@ -20,8 +20,8 @@ Var *feralArchiveNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	archive *a     = nullptr;
-	const int mode = mpz_get_si(as<VarInt>(args[1])->get());
+	archive *a = nullptr;
+	int mode   = as<VarInt>(args[1])->get();
 	if(mode == OM_READ) {
 		a = archive_read_new();
 	} else if(mode == OM_WRITE) {
@@ -35,7 +35,7 @@ Var *feralArchiveNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *feralArchiveOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		      const Map<String, AssnArgData> &assn_args)
+		      const StringMap<AssnArgData> &assn_args)
 {
 	VarArchive *ar = as<VarArchive>(args[0]);
 	archive *a     = ar->get();
@@ -61,7 +61,7 @@ Var *feralArchiveOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *feralArchiveClose(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		       const Map<String, AssnArgData> &assn_args)
+		       const StringMap<AssnArgData> &assn_args)
 {
 	VarArchive *ar = as<VarArchive>(args[0]);
 	if(ar->getMode() == OM_READ) archive_read_close(ar->get());
@@ -70,7 +70,7 @@ Var *feralArchiveClose(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *feralArchiveWriteHeader(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			     const Map<String, AssnArgData> &assn_args)
+			     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarArchiveEntry>()) {
 		vm.fail(args[1]->getLoc(),
@@ -82,7 +82,7 @@ Var *feralArchiveWriteHeader(Interpreter &vm, const ModuleLoc *loc, Span<Var *> 
 }
 
 Var *feralArchiveWriteData(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			   const Map<String, AssnArgData> &assn_args)
+			   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarBytebuffer>()) {
 		vm.fail(args[1]->getLoc(), "expected a bytebuffer for data to store, found: ",
@@ -95,7 +95,7 @@ Var *feralArchiveWriteData(Interpreter &vm, const ModuleLoc *loc, Span<Var *> ar
 }
 
 Var *feralArchiveAddFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			 const Map<String, AssnArgData> &assn_args)
+			 const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(args[1]->getLoc(), "expected a file name to write in archive");
@@ -125,7 +125,7 @@ Var *feralArchiveAddFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 }
 
 Var *feralArchiveExtract(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			 const Map<String, AssnArgData> &assn_args)
+			 const StringMap<AssnArgData> &assn_args)
 {
 	VarArchive *ar = as<VarArchive>(args[0]);
 	archive *a     = ar->get();

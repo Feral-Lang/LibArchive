@@ -9,7 +9,7 @@ let builder = cmake.new('archive');
 # get libarchive prefix using homebrew if using macos
 let extPrefix = '';
 if os.name == 'macos' {
-	let brew = os.findExec('brew');
+	let brew = fs.findExec('brew');
 	if brew.empty() {
 		io.cprintln('{y}error{0}: could not find \'brew\' in $PATH{0}');
 		sys.exit(1);
@@ -24,13 +24,12 @@ if os.name == 'macos' {
 }
 
 # requires the C libarchive library
-let libarchiveDep = builder.addDep('archive');
+let libarchiveDep = builder.addLibDep('archive');
 libarchiveDep.makeReqd();
-libarchiveDep.addPathSuffixes('archive');
 if !extPrefix.empty() { libarchiveDep.addExtPrefix(extPrefix); }
 
 # requires feral bytebuffer type
-let bytebufferDep = builder.addDep('BytebufferType');
+let bytebufferDep = builder.addLibDep('BytebufferType');
 bytebufferDep.makeReqd().makeFeralLib();
 bytebufferDep.addPathSuffixes('std');
 

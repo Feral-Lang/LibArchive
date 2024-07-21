@@ -7,7 +7,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *feralArchiveApplyFilter(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			     const Map<String, AssnArgData> &assn_args)
+			     const StringMap<AssnArgData> &assn_args)
 {
 	VarArchive *ar = as<VarArchive>(args[0]);
 	archive *a     = ar->get();
@@ -19,7 +19,7 @@ Var *feralArchiveApplyFilter(Interpreter &vm, const ModuleLoc *loc, Span<Var *> 
 
 	// list available here:
 	// https://github.com/libarchive/libarchive/blob/c400064a1c63d122340d09d8ce3f671d4cf24b6e/libarchive/archive.h#L266
-	int filter = mpz_get_si(as<VarInt>(args[1])->get());
+	int filter = as<VarInt>(args[1])->get();
 	switch(filter) {
 	case ARCHIVE_FILTER_NONE: {
 		if(ar->getMode() == OM_READ) archive_read_support_filter_none(a);

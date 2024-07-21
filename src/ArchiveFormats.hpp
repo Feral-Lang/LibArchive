@@ -7,7 +7,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *feralArchiveApplyFormat(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			     const Map<String, AssnArgData> &assn_args)
+			     const StringMap<AssnArgData> &assn_args)
 {
 	VarArchive *ar = as<VarArchive>(args[0]);
 	archive *a     = ar->get();
@@ -18,7 +18,7 @@ Var *feralArchiveApplyFormat(Interpreter &vm, const ModuleLoc *loc, Span<Var *> 
 	}
 	// list available here:
 	// https://github.com/libarchive/libarchive/blob/c400064a1c63d122340d09d8ce3f671d4cf24b6e/libarchive/archive.h#L312
-	int format = mpz_get_si(as<VarInt>(args[1])->get());
+	int format = as<VarInt>(args[1])->get();
 
 	switch(format) {
 	case ARCHIVE_FORMAT_CPIO: {

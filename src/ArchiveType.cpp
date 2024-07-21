@@ -5,7 +5,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarArchive::VarArchive(const ModuleLoc *loc, archive *const val, int mode, bool owner)
-	: Var(loc, typeID<VarArchive>(), false, false), val(val), mode((OpenMode)mode), owner(owner)
+	: Var(loc, false, false), val(val), mode((OpenMode)mode), owner(owner)
 {}
 VarArchive::~VarArchive()
 {
@@ -30,7 +30,7 @@ void VarArchive::set(Var *from)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarArchiveEntry::VarArchiveEntry(const ModuleLoc *loc, archive_entry *const val, bool owner)
-	: Var(loc, typeID<VarArchiveEntry>(), false, false), val(val), owner(owner)
+	: Var(loc, false, false), val(val), owner(owner)
 {}
 VarArchiveEntry::~VarArchiveEntry() { archive_entry_free(val); }
 
