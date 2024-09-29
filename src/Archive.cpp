@@ -11,7 +11,7 @@ static int copyData(struct archive *ar, struct archive *aw);
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *feralArchiveNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveNew(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -34,7 +34,7 @@ Var *feralArchiveNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarArchive>(loc, a, mode);
 }
 
-Var *feralArchiveOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveOpen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		      const StringMap<AssnArgData> &assn_args)
 {
 	VarArchive *ar = as<VarArchive>(args[0]);
@@ -60,7 +60,7 @@ Var *feralArchiveOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *feralArchiveClose(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveClose(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		       const StringMap<AssnArgData> &assn_args)
 {
 	VarArchive *ar = as<VarArchive>(args[0]);
@@ -69,7 +69,7 @@ Var *feralArchiveClose(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *feralArchiveWriteHeader(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveWriteHeader(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarArchiveEntry>()) {
@@ -81,7 +81,7 @@ Var *feralArchiveWriteHeader(Interpreter &vm, const ModuleLoc *loc, Span<Var *> 
 	return args[0];
 }
 
-Var *feralArchiveWriteData(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveWriteData(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarBytebuffer>()) {
@@ -94,7 +94,7 @@ Var *feralArchiveWriteData(Interpreter &vm, const ModuleLoc *loc, Span<Var *> ar
 	return args[0];
 }
 
-Var *feralArchiveAddFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveAddFile(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			 const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -124,7 +124,7 @@ Var *feralArchiveAddFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 	return args[0];
 }
 
-Var *feralArchiveExtract(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveExtract(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			 const StringMap<AssnArgData> &assn_args)
 {
 	VarArchive *ar = as<VarArchive>(args[0]);

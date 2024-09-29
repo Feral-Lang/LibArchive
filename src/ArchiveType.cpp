@@ -4,7 +4,7 @@
 ///////////////////////////////////////// Archive Class //////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarArchive::VarArchive(const ModuleLoc *loc, archive *const val, int mode, bool owner)
+VarArchive::VarArchive(ModuleLoc loc, archive *const val, int mode, bool owner)
 	: Var(loc, false, false), val(val), mode((OpenMode)mode), owner(owner)
 {}
 VarArchive::~VarArchive()
@@ -15,7 +15,7 @@ VarArchive::~VarArchive()
 	}
 }
 
-Var *VarArchive::copy(const ModuleLoc *loc) { return new VarArchive(loc, val, mode, false); }
+Var *VarArchive::copy(ModuleLoc loc) { return new VarArchive(loc, val, mode, false); }
 
 void VarArchive::set(Var *from)
 {
@@ -29,12 +29,12 @@ void VarArchive::set(Var *from)
 ///////////////////////////////////// Archive Entry Class ////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarArchiveEntry::VarArchiveEntry(const ModuleLoc *loc, archive_entry *const val, bool owner)
+VarArchiveEntry::VarArchiveEntry(ModuleLoc loc, archive_entry *const val, bool owner)
 	: Var(loc, false, false), val(val), owner(owner)
 {}
 VarArchiveEntry::~VarArchiveEntry() { archive_entry_free(val); }
 
-Var *VarArchiveEntry::copy(const ModuleLoc *loc) { return new VarArchiveEntry(loc, val, false); }
+Var *VarArchiveEntry::copy(ModuleLoc loc) { return new VarArchiveEntry(loc, val, false); }
 
 void VarArchiveEntry::set(Var *from)
 {

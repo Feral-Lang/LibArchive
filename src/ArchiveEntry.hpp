@@ -8,7 +8,7 @@
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *feralArchiveEntryNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveEntryNew(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			  const StringMap<AssnArgData> &assn_args)
 {
 	archive_entry *ae = archive_entry_new();
@@ -19,14 +19,14 @@ Var *feralArchiveEntryNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> arg
 	return vm.makeVar<VarArchiveEntry>(loc, ae);
 }
 
-Var *feralArchiveEntryClear(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveEntryClear(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			    const StringMap<AssnArgData> &assn_args)
 {
 	archive_entry_clear(as<VarArchiveEntry>(args[0])->get());
 	return args[0];
 }
 
-Var *feralArchiveEntrySetPathname(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveEntrySetPathname(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 				  const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -39,7 +39,7 @@ Var *feralArchiveEntrySetPathname(Interpreter &vm, const ModuleLoc *loc, Span<Va
 	return args[0];
 }
 
-Var *feralArchiveEntrySetSize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveEntrySetSize(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -51,7 +51,7 @@ Var *feralArchiveEntrySetSize(Interpreter &vm, const ModuleLoc *loc, Span<Var *>
 	return args[0];
 }
 
-Var *feralArchiveEntrySetFiletype(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveEntrySetFiletype(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 				  const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -63,7 +63,7 @@ Var *feralArchiveEntrySetFiletype(Interpreter &vm, const ModuleLoc *loc, Span<Va
 	return args[0];
 }
 
-Var *feralArchiveEntrySetPerm(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveEntrySetPerm(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {

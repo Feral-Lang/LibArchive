@@ -1,6 +1,5 @@
 let io = import('std/io');
 let os = import('std/os');
-let sys = import('std/sys');
 let vec = import('std/vec');
 let cmake = import('std/cmakeGen');
 
@@ -12,13 +11,13 @@ if os.name == 'macos' {
 	let brew = os.findExec('brew');
 	if brew.empty() {
 		io.cprintln('{y}error{0}: could not find \'brew\' in $PATH{0}');
-		sys.exit(1);
+		feral.exit(1);
 	}
-	let out = vec.new();
-	let res = os.exec(brew + ' --prefix libarchive 2>/dev/null', out);
+	let out = vec.new(refs = true);
+	let res = os.exec(brew, '--prefix', 'libarchive', '2>/dev/null', out = out);
 	if res != 0 || out.empty() {
 		io.cprintln('{y}error{0}: brew failed in giving any relevant output');
-		sys.exit(1);
+		feral.exit(1);
 	}
 	extPrefix = out[0];
 }
@@ -27,11 +26,6 @@ if os.name == 'macos' {
 let libarchiveDep = builder.addLibDep('archive');
 libarchiveDep.makeReqd();
 if !extPrefix.empty() { libarchiveDep.addExtPrefix(extPrefix); }
-
-# requires feral bytebuffer type
-let bytebufferDep = builder.addLibDep('BytebufferType');
-bytebufferDep.makeReqd().makeFeralLib();
-bytebufferDep.addPathSuffixes('std');
 
 let archiveType = builder.addSharedLib('ArchiveType');
 archiveType.addDep(libarchiveDep);

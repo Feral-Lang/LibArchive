@@ -19,10 +19,10 @@ class VarArchive : public Var
 	bool owner;
 
 public:
-	VarArchive(const ModuleLoc *loc, archive *const val, int mode, bool owner = true);
+	VarArchive(ModuleLoc loc, archive *const val, int mode, bool owner = true);
 	~VarArchive();
 
-	Var *copy(const ModuleLoc *loc);
+	Var *copy(ModuleLoc loc);
 	void set(Var *from);
 
 	inline archive *const get() { return val; }
@@ -35,10 +35,10 @@ class VarArchiveEntry : public Var
 	bool owner;
 
 public:
-	VarArchiveEntry(const ModuleLoc *loc, archive_entry *const val, bool owner = true);
+	VarArchiveEntry(ModuleLoc loc, archive_entry *const val, bool owner = true);
 	~VarArchiveEntry();
 
-	Var *copy(const ModuleLoc *loc);
+	Var *copy(ModuleLoc loc);
 	void set(Var *from);
 
 	inline archive_entry *const get() { return val; }

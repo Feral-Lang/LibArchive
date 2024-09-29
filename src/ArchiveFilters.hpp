@@ -6,7 +6,7 @@
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *feralArchiveApplyFilter(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *feralArchiveApplyFilter(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			     const StringMap<AssnArgData> &assn_args)
 {
 	VarArchive *ar = as<VarArchive>(args[0]);

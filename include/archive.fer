@@ -1,4 +1,4 @@
-mload('archive/Archive');
+loadlib('archive/Archive');
 
 let stat = import('std/stat');
 
